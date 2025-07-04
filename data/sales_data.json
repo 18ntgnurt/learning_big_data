@@ -1,0 +1,53 @@
+[ {
+  "validationErrors" : "",
+  "valid" : true,
+  "transaction_id" : "TXN001",
+  "customer_id" : "CUST001",
+  "product_name" : "Laptop Pro",
+  "product_category" : "Electronics",
+  "quantity" : 1,
+  "unit_price" : 1299.99,
+  "total_amount" : 1299.99,
+  "sale_date" : "2023-10-01 10:30:00",
+  "store_location" : "New York",
+  "sales_person" : "John Smith"
+}, {
+  "validationErrors" : "",
+  "valid" : true,
+  "transaction_id" : "TXN002",
+  "customer_id" : "CUST002",
+  "product_name" : "Coffee Mug",
+  "product_category" : "Home & Garden",
+  "quantity" : 2,
+  "unit_price" : 15.50,
+  "total_amount" : 31.00,
+  "sale_date" : "2023-10-01 11:15:00",
+  "store_location" : "Los Angeles",
+  "sales_person" : "Jane Doe"
+}, {
+  "validationErrors" : "",
+  "valid" : true,
+  "transaction_id" : "TXN003",
+  "customer_id" : "CUST003",
+  "product_name" : "Running Shoes",
+  "product_category" : "Sports",
+  "quantity" : 1,
+  "unit_price" : 89.99,
+  "total_amount" : 89.99,
+  "sale_date" : "2023-10-01 14:20:00",
+  "store_location" : "Chicago",
+  "sales_person" : "Mike Johnson"
+}, {
+  "validationErrors" : "",
+  "valid" : true,
+  "transaction_id" : "TXN004",
+  "customer_id" : "CUST001",
+  "product_name" : "Wireless Mouse",
+  "product_category" : "Electronics",
+  "quantity" : 3,
+  "unit_price" : 25.99,
+  "total_amount" : 77.97,
+  "sale_date" : "2023-10-01 16:45:00",
+  "store_location" : "New York",
+  "sales_person" : "John Smith"
+} ]

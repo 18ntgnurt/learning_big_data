@@ -1,0 +1,9 @@
+transaction_id,customer_id,product_name,product_category,quantity,unit_price,sale_date,store_location,sales_person
+TXN001,CUST001,Laptop Pro,Electronics,1,1299.99,2023-10-01 10:30:00,New York,John Smith
+TXN002,CUST002,Coffee Mug,Home & Garden,2,15.50,2023-10-01 11:15:00,Los Angeles,Jane Doe
+TXN003,CUST003,Running Shoes,Sports,1,89.99,2023-10-01 14:20:00,Chicago,Mike Johnson
+TXN004,CUST001,Wireless Mouse,Electronics,3,25.99,2023-10-01 16:45:00,New York,John Smith
+TXN005,CUST004,Book: Data Engineering,Books,1,45.00,2023-10-02 09:30:00,Seattle,Sarah Wilson
+TXN006,CUST005,Smartphone Case,Electronics,2,12.99,2023-10-02 12:00:00,Miami,Carlos Rodriguez
+TXN007,CUST002,Garden Hose,Home & Garden,1,35.75,2023-10-02 15:30:00,Los Angeles,Jane Doe
+TXN008,CUST006,Tennis Racket,Sports,1,125.00,2023-10-03 11:00:00,Denver,Lisa Brown

@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: data_engineering_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: data_engineering
+      MYSQL_USER: dataeng
+      MYSQL_PASSWORD: dataeng123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - data_engineering_network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: data_engineering_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: data_engineering
+      POSTGRES_USER: dataeng
+      POSTGRES_PASSWORD: dataeng123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - data_engineering_network
+
+  # Optional: Database Management UI (Adminer)
+  adminer:
+    image: adminer:latest
+    container_name: data_engineering_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - data_engineering_network
+    depends_on:
+      - mysql
+      - postgres
+
+volumes:
+  mysql_data:
+  postgres_data:
+
+networks:
+  data_engineering_network:
+    driver: bridge 
