@@ -1,0 +1,112 @@
+apiVersion: 1
+
+providers:
+  # Big Data Platform Overview
+  - name: 'bigdata-platform'
+    orgId: 1
+    folder: 'Big Data Platform'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/platform
+
+  # ETL and Data Processing
+  - name: 'etl-processing'
+    orgId: 1
+    folder: 'ETL & Data Processing'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/etl
+
+  # Fraud Detection and ML
+  - name: 'fraud-detection'
+    orgId: 1
+    folder: 'Fraud Detection & ML'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/fraud
+
+  # Kafka and Streaming
+  - name: 'kafka-streaming'
+    orgId: 1
+    folder: 'Kafka & Streaming'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/kafka
+
+  # Infrastructure Monitoring
+  - name: 'infrastructure'
+    orgId: 1
+    folder: 'Infrastructure'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/infrastructure
+
+  # Database Monitoring
+  - name: 'databases'
+    orgId: 1
+    folder: 'Databases'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/databases
+
+  # Application Performance
+  - name: 'application-performance'
+    orgId: 1
+    folder: 'Application Performance'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/applications
+
+  # Business Metrics
+  - name: 'business-metrics'
+    orgId: 1
+    folder: 'Business Metrics'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/business
+
+  # System Health
+  - name: 'system-health'
+    orgId: 1
+    folder: 'System Health'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/health
+
+  # Alerts and Incidents
+  - name: 'alerts-incidents'
+    orgId: 1
+    folder: 'Alerts & Incidents'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/alerts 

@@ -1,0 +1,168 @@
+version: '3.8'
+
+# 🚀 Big Data Platform - Lightweight Setup (No Heavy ML Dependencies)
+# Fast startup for development and testing
+
+services:
+  # ============================================
+  # INFRASTRUCTURE LAYER
+  # ============================================
+  
+  # Zookeeper for Kafka coordination
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: bigdata-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+
+  # Kafka message broker
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: bigdata-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+
+  # Schema Registry for Kafka schema management
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.4.0
+    container_name: bigdata-schema-registry
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+
+  # PostgreSQL for data warehouse
+  postgres:
+    image: postgres:15-alpine
+    container_name: bigdata-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: bigdata
+      POSTGRES_USER: bigdata_user
+      POSTGRES_PASSWORD: bigdata_pass
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+
+  # Redis for caching
+  redis:
+    image: redis:7.0-alpine
+    container_name: bigdata-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+
+  # ============================================
+  # SIMPLE ML SERVICE (No Heavy Dependencies)
+  # ============================================
+
+  # Lightweight ML API using Python Alpine
+  ml-api:
+    image: python:3.9-alpine
+    container_name: bigdata-ml-api
+    ports:
+      - "5001:5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+    volumes:
+      - ./ml-services/simple:/app
+    working_dir: /app
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    command: >
+      sh -c "
+        pip install flask flask-cors redis psycopg2-binary &&
+        python app.py
+      "
+
+  # ============================================
+  # MONITORING & MANAGEMENT
+  # ============================================
+
+  # Kafka UI for cluster management
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: bigdata-kafka-ui
+    depends_on:
+      - kafka
+      - schema-registry
+    ports:
+      - "9091:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: bigdata-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+
+  # Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: bigdata-redis-commander
+    ports:
+      - "8082:8081"
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    depends_on:
+      - redis
+
+  # Simple web UI for the platform
+  web-ui:
+    image: nginx:alpine
+    container_name: bigdata-web-ui
+    ports:
+      - "8090:80"
+    volumes:
+      - ./web-ui:/usr/share/nginx/html
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+
+networks:
+  bigdata-network:
+    driver: bridge
+
+volumes:
+  kafka-data:
+  postgres-data:
+  redis-data: 

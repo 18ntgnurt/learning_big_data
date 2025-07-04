@@ -1,0 +1,392 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # INFRASTRUCTURE LAYER
+  # ============================================
+  
+  # Zookeeper for Kafka coordination
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: bigdata-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 5
+      ZOOKEEPER_SYNC_LIMIT: 2
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Kafka message broker
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: bigdata-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9999:9999"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_JMX_PORT: 9999
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_NUM_PARTITIONS: 3
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Schema Registry for Kafka schema management
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.4.0
+    container_name: bigdata-schema-registry
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+
+  # Kafka UI for cluster management
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: bigdata-kafka-ui
+    depends_on:
+      - kafka
+      - schema-registry
+    ports:
+      - "9090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: bigdata-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+      DYNAMIC_CONFIG_ENABLED: 'true'
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+
+  # Redis for feature store caching
+  redis:
+    image: redis:7.0-alpine
+    container_name: bigdata-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL for data warehouse and MLflow backend
+  postgres:
+    image: postgres:15-alpine
+    container_name: bigdata-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: bigdata
+      POSTGRES_USER: bigdata_user
+      POSTGRES_PASSWORD: bigdata_pass
+      POSTGRES_MULTIPLE_DATABASES: mlflow,datawarehouse,feature_store
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bigdata_user -d bigdata"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MySQL for transactional data (alternative/additional)
+  mysql:
+    image: mysql:8.0
+    container_name: bigdata-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: sales_data
+      MYSQL_USER: sales_user
+      MYSQL_PASSWORD: sales_pass
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init-scripts/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================
+  # CORE ETL LAYER (JAVA)
+  # ============================================
+
+  # ETL Engine - Main data processing application
+  etl-engine:
+    build:
+      context: ../../
+      dockerfile: core/etl-engine/Dockerfile
+    container_name: bigdata-etl-engine
+    depends_on:
+      - kafka
+      - postgres
+      - mysql
+    ports:
+      - "8080:8080"
+      - "8084:8081"  # Management port
+    environment:
+      # Database configuration
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/datawarehouse
+      SPRING_DATASOURCE_USERNAME: bigdata_user
+      SPRING_DATASOURCE_PASSWORD: bigdata_pass
+      
+      # Kafka configuration
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      
+      # Application configuration
+      SPRING_PROFILES_ACTIVE: docker
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,metrics,prometheus
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
+      
+      # JVM configuration
+      JAVA_OPTS: "-Xmx2g -Xms1g -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Kafka Streams Processor
+  kafka-streams:
+    build:
+      context: ../../
+      dockerfile: core/kafka-streams/Dockerfile
+    container_name: bigdata-kafka-streams
+    depends_on:
+      - kafka
+      - etl-engine
+    ports:
+      - "8082:8080"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_APPLICATION_ID: bigdata-streams-processor
+      KAFKA_STATE_DIR: /tmp/kafka-streams
+      
+      # Monitoring
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,metrics,prometheus
+      
+      # JVM configuration
+      JAVA_OPTS: "-Xmx1g -Xms512m -XX:+UseG1GC"
+    volumes:
+      - kafka-streams-state:/tmp/kafka-streams
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+
+  # ============================================
+  # ML SERVICES LAYER (PYTHON)
+  # ============================================
+
+  # MLflow tracking server
+  mlflow:
+    image: python:3.9-slim
+    container_name: bigdata-mlflow
+    depends_on:
+      - postgres
+    ports:
+      - "5002:5002"
+    environment:
+      MLFLOW_BACKEND_STORE_URI: postgresql://bigdata_user:bigdata_pass@postgres:5432/mlflow
+      MLFLOW_DEFAULT_ARTIFACT_ROOT: /mlflow/artifacts
+      MLFLOW_HOST: 0.0.0.0
+      MLFLOW_PORT: 5002
+    volumes:
+      - mlflow-artifacts:/mlflow/artifacts
+      - ../../requirements.txt:/tmp/requirements.txt
+    command: >
+      bash -c "
+        pip install -r /tmp/requirements.txt &&
+        mlflow server 
+        --backend-store-uri postgresql://bigdata_user:bigdata_pass@postgres:5432/mlflow
+        --default-artifact-root /mlflow/artifacts
+        --host 0.0.0.0
+        --port 5002
+      "
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Fraud Detection API
+  fraud-api:
+    build:
+      context: ../../
+      dockerfile: ml-services/fraud-detection/Dockerfile
+    container_name: bigdata-fraud-api
+    depends_on:
+      - redis
+      - postgres
+      - mlflow
+      - kafka
+    ports:
+      - "5001:5001"
+      - "8000:8000"  # Prometheus metrics endpoint
+    environment:
+      # Flask configuration
+      FLASK_HOST: 0.0.0.0
+      FLASK_PORT: 5001
+      FLASK_ENV: production
+      
+      # ML configuration
+      MLFLOW_TRACKING_URI: http://mlflow:5002
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      
+      # Database configuration
+      FEATURE_STORE_DB: postgresql://bigdata_user:bigdata_pass@postgres:5432/feature_store
+      METRICS_DB: /app/data/metrics.db
+      
+      # Kafka configuration
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_INPUT_TOPIC: fraud-detection
+      KAFKA_OUTPUT_TOPIC: fraud-alerts
+      KAFKA_CONSUMER_GROUP: fraud-detection-service
+      
+      # Monitoring
+      ENABLE_PROMETHEUS: 'true'
+      PROMETHEUS_PORT: 8000
+      
+      # Model configuration
+      MODEL_NAME: fraud_detection_model
+      DRIFT_THRESHOLD: 0.3
+      ENABLE_KAFKA: 'true'
+    volumes:
+      - fraud-detection-data:/app/data
+      - fraud-detection-models:/app/models
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # NOTE: Feature Store, Model Training, and Data Quality monitoring 
+  # are integrated into the fraud-detection service for simplicity.
+  # The fraud-detection service includes:
+  # - Integrated feature store (Redis + SQLite)
+  # - MLflow model registry integration 
+  # - Built-in data quality monitoring
+  # - Prometheus metrics for monitoring
+
+  # ============================================
+  # MONITORING LAYER (Use docker-compose -f infrastructure/monitoring/docker-compose.monitoring.yml)
+  # ============================================
+  # 
+  # NOTE: Monitoring services have been moved to a dedicated stack:
+  # - infrastructure/monitoring/docker-compose.monitoring.yml
+  # 
+  # To start monitoring stack:
+  # cd infrastructure/monitoring && docker-compose -f docker-compose.monitoring.yml up -d
+  # 
+  # Monitoring services included:
+  # - Prometheus (metrics collection) - :9090
+  # - Grafana (visualization) - :3000
+  # - AlertManager (alerting) - :9093
+  # - Various exporters (node, cadvisor, redis, kafka, postgres, etc.)
+  # - Loki (log aggregation) - :3100
+  # - Promtail (log collection)
+  # - Custom exporters for MLflow, fraud detection, data quality
+
+# ============================================
+# VOLUMES
+# ============================================
+volumes:
+  # Infrastructure volumes
+  zookeeper-data:
+    driver: local
+  zookeeper-logs:
+    driver: local
+  kafka-data:
+    driver: local
+  kafka-streams-state:
+    driver: local
+  redis-data:
+    driver: local
+  postgres-data:
+    driver: local
+  mysql-data:
+    driver: local
+  
+  # ML volumes
+  mlflow-artifacts:
+    driver: local
+  fraud-detection-data:
+    driver: local
+  fraud-detection-models:
+    driver: local
+  
+  # Monitoring volumes moved to infrastructure/monitoring/docker-compose.monitoring.yml
+
+# ============================================
+# NETWORKS
+# ============================================
+networks:
+  bigdata-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 

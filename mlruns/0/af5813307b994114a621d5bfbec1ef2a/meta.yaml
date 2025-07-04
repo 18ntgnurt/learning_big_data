@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/edward/Shaking/Data%20Engineer/learning_big_data/mlruns/0/af5813307b994114a621d5bfbec1ef2a/artifacts
+end_time: 1751616573997
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: af5813307b994114a621d5bfbec1ef2a
+run_name: defiant-flea-297
+run_uuid: af5813307b994114a621d5bfbec1ef2a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1751616572812
+status: 3
+tags: []
+user_id: edward

@@ -7,14 +7,20 @@
     <groupId>com.dataengineering</groupId>
     <artifactId>learning-data-engineering</artifactId>
     <version>1.0.0</version>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
+    
+    <modules>
+        <module>shared</module>
+        <module>core/etl-engine</module>
+        <module>core/kafka-streams</module>
+    </modules>
 
     <name>Learning Data Engineering with Java</name>
-    <description>A comprehensive project to learn data engineering concepts using Java</description>
+    <description>A comprehensive project to learn data engineering concepts using Java with ML fraud detection</description>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         
         <!-- Dependency Versions -->
@@ -24,11 +30,15 @@
         <postgresql.version>42.6.0</postgresql.version>
         <h2.version>2.2.220</h2.version>
         <apache.kafka.version>3.5.0</apache.kafka.version>
+        <apache.spark.version>3.5.0</apache.spark.version>
+        <scala.version>2.12</scala.version>
+        <redis.version>4.4.5</redis.version>
         <logback.version>1.4.11</logback.version>
         <junit.version>5.10.0</junit.version>
     </properties>
 
-    <dependencies>
+    <dependencyManagement>
+        <dependencies>
         <!-- JSON Processing -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -83,6 +93,153 @@
             <artifactId>kafka-streams</artifactId>
             <version>${apache.kafka.version}</version>
         </dependency>
+
+        <!-- ============================================ -->
+        <!-- APACHE SPARK ML DEPENDENCIES               -->
+        <!-- ============================================ -->
+        
+        <!-- Spark Core -->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_${scala.version}</artifactId>
+            <version>${apache.spark.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        
+        <!-- Spark SQL for data processing -->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql_${scala.version}</artifactId>
+            <version>${apache.spark.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        
+        <!-- Spark MLlib for machine learning -->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-mllib_${scala.version}</artifactId>
+            <version>${apache.spark.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        
+        <!-- Spark Streaming for real-time processing -->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-streaming_${scala.version}</artifactId>
+            <version>${apache.spark.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        
+        <!-- Spark Kafka Integration -->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-streaming-kafka-0-10_${scala.version}</artifactId>
+            <version>${apache.spark.version}</version>
+        </dependency>
+
+        <!-- ============================================ -->
+        <!-- FEATURE STORE AND CACHING                 -->
+        <!-- ============================================ -->
+        
+        <!-- Redis for feature store -->
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>${redis.version}</version>
+        </dependency>
+
+        <!-- ============================================ -->
+        <!-- ML MODEL SERVING AND MONITORING           -->
+        <!-- ============================================ -->
+        
+        <!-- HTTP Client for model serving -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.14</version>
+        </dependency>
+        
+        <!-- Metrics for monitoring -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <version>1.11.5</version>
+        </dependency>
+        
+        <!-- Micrometer Prometheus integration -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <version>1.11.5</version>
+        </dependency>
+
+        <!-- ============================================ -->
+        <!-- ADDITIONAL MATH AND STATISTICS LIBRARIES  -->
+        <!-- ============================================ -->
+        
+        <!-- Apache Commons Math for statistical functions -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>3.6.1</version>
+        </dependency>
+        
+        <!-- Apache Commons Lang for utilities -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.13.0</version>
+        </dependency>
+
+        <!-- ============================================ -->
+        <!-- WEB FRAMEWORK FOR REST API                -->
+        <!-- ============================================ -->
+        
+        <!-- Spring Boot for REST API -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>3.1.5</version>
+        </dependency>
+        
+        <!-- Spring Boot Actuator for health endpoints -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+            <version>3.1.5</version>
+        </dependency>
+
+        <!-- ============================================ -->
+        <!-- CONFIGURATION AND UTILITIES               -->
+        <!-- ============================================ -->
+        
+        <!-- Configuration properties -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <version>3.1.5</version>
+            <optional>true</optional>
+        </dependency>
         
         <!-- Logging -->
         <dependency>
@@ -98,7 +255,31 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-    </dependencies>
+        
+        <!-- Spring Boot Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <version>3.1.5</version>
+            <scope>test</scope>
+        </dependency>
+        
+        <!-- Testcontainers for integration testing -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>1.19.1</version>
+            <scope>test</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>kafka</artifactId>
+            <version>1.19.1</version>
+            <scope>test</scope>
+        </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>
@@ -123,6 +304,40 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
+            </plugin>
+            
+            <!-- Spring Boot Plugin -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>3.1.5</version>
+            </plugin>
+            
+            <!-- Spark Submit Plugin for deployment -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.4.1</version>
+                <configuration>
+                    <filters>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

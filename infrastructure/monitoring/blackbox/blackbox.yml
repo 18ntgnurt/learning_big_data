@@ -1,0 +1,191 @@
+modules:
+  # HTTP 2xx probe
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 201, 202]
+      method: GET
+      headers:
+        Host: vhost.example.com
+        Accept-Language: en-US
+        Origin: example.com
+      no_follow_redirects: false
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+      tls_config:
+        insecure_skip_verify: false
+      preferred_ip_protocol: "ip4"
+      ip_protocol_fallback: true
+
+  # HTTP POST probe
+  http_post_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      method: POST
+      headers:
+        Content-Type: application/json
+      body: '{"health": "check"}'
+      valid_status_codes: [200, 201, 202]
+
+  # HTTP probe with basic auth
+  http_basic_auth:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      valid_status_codes: [200, 401]
+      basic_auth:
+        username: "test"
+        password: "test"
+
+  # TCP connect probe
+  tcp_connect:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      query_response: []
+
+  # TCP connect with TLS
+  tcp_connect_tls:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      tls: true
+      tls_config:
+        insecure_skip_verify: false
+
+  # ICMP probe
+  icmp:
+    prober: icmp
+    timeout: 5s
+    icmp:
+      preferred_ip_protocol: "ip4"
+      source_ip_address: "127.0.0.1"
+
+  # Fraud Detection API health check
+  fraud_api_health:
+    prober: http
+    timeout: 10s
+    http:
+      method: GET
+      valid_status_codes: [200]
+      headers:
+        Content-Type: application/json
+        Accept: application/json
+      body: ""
+      fail_if_body_not_matches_regexp:
+        - "status.*healthy"
+      fail_if_header_not_matches_regexp:
+        - "Content-Type:application/json"
+
+  # ETL Engine health check
+  etl_health:
+    prober: http
+    timeout: 10s
+    http:
+      method: GET
+      valid_status_codes: [200]
+      headers:
+        Accept: application/json
+      fail_if_body_not_matches_regexp:
+        - "status.*UP"
+
+  # MLflow health check
+  mlflow_health:
+    prober: http
+    timeout: 15s
+    http:
+      method: GET
+      valid_status_codes: [200]
+      headers:
+        Accept: application/json
+
+  # Kafka broker connectivity
+  kafka_connect:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      query_response:
+        - expect: ""
+
+  # Database connectivity
+  postgres_connect:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      query_response: []
+
+  mysql_connect:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      query_response: []
+
+  redis_connect:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      query_response: []
+
+  # Grafana health check
+  grafana_health:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      valid_status_codes: [200]
+      headers:
+        Accept: application/json
+      fail_if_body_not_matches_regexp:
+        - "database.*ok"
+
+  # Prometheus health check
+  prometheus_health:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      valid_status_codes: [200]
+      headers:
+        Accept: application/json
+
+  # Feature Store health check
+  feature_store_health:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      valid_status_codes: [200]
+      headers:
+        Content-Type: application/json
+      fail_if_body_not_matches_regexp:
+        - "redis.*connected"
+        - "postgres.*connected"
+
+  # Model Registry health check
+  model_registry_health:
+    prober: http
+    timeout: 10s
+    http:
+      method: GET
+      valid_status_codes: [200]
+      headers:
+        Content-Type: application/json
+      fail_if_body_not_matches_regexp:
+        - "mlflow.*connected"
+
+  # Data Quality Monitor health check
+  data_quality_health:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      valid_status_codes: [200]
+      headers:
+        Content-Type: application/json
+      fail_if_body_not_matches_regexp:
+        - "kafka.*connected"
+        - "quality_checks.*running" 

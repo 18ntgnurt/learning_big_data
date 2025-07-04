@@ -1,58 +1,455 @@
 version: '3.8'
 
-services:
-  # MySQL Database
-  mysql:
-    image: mysql:8.0
-    container_name: data_engineering_mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: data_engineering
-      MYSQL_USER: dataeng
-      MYSQL_PASSWORD: dataeng123
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./init-scripts:/docker-entrypoint-initdb.d
-    networks:
-      - data_engineering_network
+# 🚀 Big Data Learning Platform - Complete Docker Environment
+# Professional enterprise-grade setup with all services
 
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15
-    container_name: data_engineering_postgres
-    restart: unless-stopped
+services:
+  # ============================================
+  # INFRASTRUCTURE LAYER
+  # ============================================
+  
+  # Zookeeper for Kafka coordination
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: bigdata-zookeeper
     environment:
-      POSTGRES_DB: data_engineering
-      POSTGRES_USER: dataeng
-      POSTGRES_PASSWORD: dataeng123
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 5
+      ZOOKEEPER_SYNC_LIMIT: 2
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Kafka message broker
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: bigdata-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9999:9999"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_JMX_PORT: 9999
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_NUM_PARTITIONS: 3
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Schema Registry for Kafka schema management
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.4.0
+    container_name: bigdata-schema-registry
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+
+  # PostgreSQL for data warehouse and MLflow backend
+  postgres:
+    image: postgres:15-alpine
+    container_name: bigdata-postgres
     ports:
       - "5432:5432"
+    environment:
+      POSTGRES_DB: bigdata
+      POSTGRES_USER: bigdata_user
+      POSTGRES_PASSWORD: bigdata_pass
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
     networks:
-      - data_engineering_network
-
-  # Optional: Database Management UI (Adminer)
-  adminer:
-    image: adminer:latest
-    container_name: data_engineering_adminer
+      - bigdata-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bigdata_user -d bigdata"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MySQL for transactional data
+  mysql:
+    image: mysql:8.0
+    container_name: bigdata-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: sales_data
+      MYSQL_USER: sales_user
+      MYSQL_PASSWORD: sales_pass
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for feature store caching
+  redis:
+    image: redis:7.0-alpine
+    container_name: bigdata-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================
+  # ML SERVICES LAYER (PYTHON)
+  # ============================================
+
+  # Main ML Services Application
+  ml-services:
+    build:
+      context: ./ml-services
+      dockerfile: app/Dockerfile.fast
+    container_name: bigdata-ml-services
+    ports:
+      - "5000:5000"
+      - "8000:8000"  # Metrics port
+    environment:
+      # Flask Configuration
+      - FLASK_ENV=production
+      - FLASK_HOST=0.0.0.0
+      - FLASK_PORT=5000
+      - SECRET_KEY=your-production-secret-key
+      
+      # Database Configuration
+      - DATABASE_URL=postgresql://bigdata_user:bigdata_pass@postgres:5432/bigdata
+      - REDIS_URL=redis://redis:6379/0
+      
+      # MLflow Configuration
+      - MLFLOW_TRACKING_URI=http://mlflow:5002
+      - MLFLOW_ARTIFACT_LOCATION=/mlruns
+      
+      # Kafka Configuration
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - ENABLE_KAFKA_STREAMING=true
+      
+      # Feature Flags
+      - ENABLE_RATE_LIMITING=false  # Disabled for demo
+      - ENABLE_AUTH=false           # Disabled for demo
+      - ENABLE_METRICS=true
+      - ENABLE_FEATURE_STORE=true
+      - ENABLE_MODEL_CACHING=true
+      
+      # Business Logic Configuration
+      - MAX_BATCH_SIZE=100
+      - MAX_CONCURRENT_TRAINING_JOBS=3
+      
+    volumes:
+      - ml_models:/app/models
+      - ml_data:/app/data
+      - ml_logs:/app/logs
+      - ./mlruns:/mlruns
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+      - mlflow
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # MLflow Tracking Server
+  mlflow:
+    image: python:3.9-slim
+    container_name: bigdata-mlflow
+    ports:
+      - "5002:5002"
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=postgresql://bigdata_user:bigdata_pass@postgres:5432/bigdata
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlruns
+    volumes:
+      - mlflow_artifacts:/mlruns
+    depends_on:
+      - postgres
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    command: >
+      sh -c "
+        pip install mlflow psycopg2-binary &&
+        mlflow server 
+        --host 0.0.0.0 
+        --port 5002 
+        --backend-store-uri postgresql://bigdata_user:bigdata_pass@postgres:5432/bigdata 
+        --default-artifact-root /mlruns
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ============================================
+  # CORE ETL LAYER (JAVA)
+  # ============================================
+
+  # ETL Engine - Main data processing application
+  etl-engine:
+    build:
+      context: .
+      dockerfile: core/etl-engine/Dockerfile
+    container_name: bigdata-etl-engine
+    depends_on:
+      - kafka
+      - postgres
+      - mysql
     ports:
       - "8080:8080"
+      - "8084:8081"  # Management port
+    environment:
+      # Database configuration
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bigdata
+      SPRING_DATASOURCE_USERNAME: bigdata_user
+      SPRING_DATASOURCE_PASSWORD: bigdata_pass
+      
+      # Kafka configuration
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      
+      # Application configuration
+      SPRING_PROFILES_ACTIVE: docker
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,metrics,prometheus
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
+      
+      # JVM configuration
+      JAVA_OPTS: "-Xmx2g -Xms1g -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+    volumes:
+      - ./data:/app/data
+      - etl_logs:/app/logs
     networks:
-      - data_engineering_network
-    depends_on:
-      - mysql
-      - postgres
+      - bigdata-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
 
-volumes:
-  mysql_data:
-  postgres_data:
+  # Kafka Streams processor
+  kafka-streams:
+    build:
+      context: .
+      dockerfile: core/kafka-streams/Dockerfile
+    container_name: bigdata-kafka-streams
+    depends_on:
+      - kafka
+      - schema-registry
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: "-Xmx1g -Xms512m"
+    volumes:
+      - streams_logs:/app/logs
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+
+  # ============================================
+  # MONITORING LAYER
+  # ============================================
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: bigdata-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: bigdata-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+      GF_INSTALL_PLUGINS: grafana-piechart-panel,redis-datasource
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infrastructure/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./infrastructure/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  # AlertManager for alerting
+  alertmanager:
+    image: prom/alertmanager:v0.25.0
+    container_name: bigdata-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./infrastructure/monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager-data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+
+  # ============================================
+  # MANAGEMENT & UI SERVICES
+  # ============================================
+
+  # Kafka UI for cluster management
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: bigdata-kafka-ui
+    depends_on:
+      - kafka
+      - schema-registry
+    ports:
+      - "9091:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: bigdata-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+      DYNAMIC_CONFIG_ENABLED: 'true'
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+
+  # Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: bigdata-redis-commander
+    ports:
+      - "8082:8081"
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+    depends_on:
+      - redis
+
+  # Jupyter Notebook for data analysis
+  jupyter:
+    image: jupyter/datascience-notebook:latest
+    container_name: bigdata-jupyter
+    ports:
+      - "8888:8888"
+    environment:
+      JUPYTER_ENABLE_LAB: "yes"
+      JUPYTER_TOKEN: "bigdata123"
+    volumes:
+      - ./notebooks:/home/jovyan/work
+      - ./data:/home/jovyan/data
+      - jupyter-data:/home/jovyan
+    networks:
+      - bigdata-network
+    restart: unless-stopped
+
+# ============================================
+# NETWORKS & VOLUMES
+# ============================================
 
 networks:
-  data_engineering_network:
-    driver: bridge 
+  bigdata-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  # Infrastructure volumes
+  zookeeper-data:
+  zookeeper-logs:
+  kafka-data:
+  postgres-data:
+  mysql-data:
+  redis-data:
+  
+  # Application volumes
+  ml_models:
+  ml_data:
+  ml_logs:
+  mlflow_artifacts:
+  etl_logs:
+  streams_logs:
+  
+  # Monitoring volumes
+  prometheus-data:
+  grafana-data:
+  alertmanager-data:
+  
+  # Development volumes
+  jupyter-data: 

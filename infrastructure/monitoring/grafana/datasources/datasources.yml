@@ -1,0 +1,159 @@
+apiVersion: 1
+
+# List of data sources to insert/update depending on what's
+# available in the database
+datasources:
+  # Primary Prometheus datasource
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    basicAuth: false
+    isDefault: true
+    editable: true
+    jsonData:
+      timeInterval: "5s"
+      queryTimeout: "60s"
+      httpMethod: "POST"
+      manageAlerts: true
+      alertmanagerUid: "alertmanager"
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: "jaeger"
+    version: 1
+
+  # Loki for logs
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    basicAuth: false
+    isDefault: false
+    editable: true
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        - name: "TraceID"
+          label: "traceID"
+          url: "http://localhost:16686/trace/$${__value.raw}"
+          datasourceUid: "jaeger"
+        - name: "ServiceName" 
+          label: "service_name"
+          regex: "service_name=([^\\s]+)"
+    version: 1
+
+  # AlertManager
+  - name: AlertManager
+    type: alertmanager
+    access: proxy
+    url: http://alertmanager:9093
+    basicAuth: false
+    isDefault: false
+    editable: true
+    uid: "alertmanager"
+    jsonData:
+      implementation: "prometheus"
+      handleGrafanaManagedAlerts: true
+    version: 1
+
+  # Redis datasource for Feature Store monitoring
+  - name: Redis
+    type: redis-datasource
+    access: proxy
+    url: redis://redis:6379
+    basicAuth: false
+    isDefault: false
+    editable: true
+    jsonData:
+      client: "standalone"
+      poolSize: 5
+      timeout: 10
+      pingInterval: 0
+      pipelineWindow: 0
+    secureJsonData:
+      password: ""
+    version: 1
+
+  # PostgreSQL for database monitoring
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: bigdata
+    user: bigdata_user
+    basicAuth: false
+    isDefault: false
+    editable: true
+    jsonData:
+      sslmode: "disable"
+      maxOpenConns: 100
+      maxIdleConns: 100
+      maxIdleConnsAuto: true
+      connMaxLifetime: 14400
+      postgresVersion: 1500
+      timescaledb: false
+    secureJsonData:
+      password: "bigdata_pass"
+    version: 1
+
+  # MySQL for data warehouse monitoring
+  - name: MySQL
+    type: mysql
+    access: proxy
+    url: mysql:3306
+    database: bigdata
+    user: bigdata_user
+    basicAuth: false
+    isDefault: false
+    editable: true
+    jsonData:
+      maxOpenConns: 100
+      maxIdleConns: 100
+      maxIdleConnsAuto: true
+      connMaxLifetime: 14400
+    secureJsonData:
+      password: "bigdata_pass"
+    version: 1
+
+  # MLflow tracking (custom datasource via JSON API)
+  - name: MLflow
+    type: marcusolsson-json-datasource
+    access: proxy
+    url: http://mlflow:5000
+    basicAuth: false
+    isDefault: false
+    editable: true
+    jsonData:
+      path: "api/2.0/mlflow"
+      method: "GET"
+      timeout: 60
+      cacheDurationSeconds: 300
+    version: 1
+
+  # Kafka metrics via JMX
+  - name: Kafka-JMX
+    type: prometheus
+    access: proxy
+    url: http://kafka-exporter:9308
+    basicAuth: false
+    isDefault: false
+    editable: true
+    jsonData:
+      timeInterval: "15s"
+      queryTimeout: "30s"
+      httpMethod: "GET"
+    version: 1
+
+  # Business metrics from Fraud API
+  - name: Business-Metrics
+    type: prometheus
+    access: proxy
+    url: http://fraud-api:8000
+    basicAuth: false
+    isDefault: false
+    editable: true
+    jsonData:
+      timeInterval: "30s"
+      queryTimeout: "30s"
+      httpMethod: "GET"
+    version: 1 

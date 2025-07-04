@@ -1,330 +1,310 @@
-# 🎓 Learning Data Engineering with Java
+# 🎓 Big Data Platform - Learning Data Engineering
 
-A comprehensive, hands-on project designed to teach data engineering concepts using Java. This project demonstrates real-world data engineering patterns, best practices, and technologies through practical examples.
+A comprehensive, production-ready big data processing platform demonstrating modern data engineering and ML practices through a complete fraud detection system.
 
 ## 📋 Documentation
 
-- **[🏗️ ARCHITECTURE_README.md](ARCHITECTURE_README.md)** - Complete system architecture documentation
-- **[🚀 KAFKA Implementation Guides](KAFKA_IMPLEMENTATION_GUIDE.md)** - Kafka streaming setup and usage
-- **[🔧 Testing & Monitoring](KAFKA_MONITORING_GUIDE.md)** - System monitoring and testing approaches
+- **[🏗️ REFACTORED_ARCHITECTURE.md](REFACTORED_ARCHITECTURE.md)** - Complete refactored system architecture
+- **[📊 Infrastructure Monitoring](infrastructure/monitoring/README.md)** - Unified monitoring stack documentation
 
-## 🎯 Learning Objectives
+## 🎯 What You'll Learn
 
-By working through this project, you will learn:
+This project demonstrates enterprise-grade patterns and practices:
 
-- **Data Ingestion**: Reading data from various sources (CSV, JSON, databases)
-- **Data Processing**: Transforming, validating, and enriching data
-- **Real-time Streaming**: Apache Kafka for real-time data processing
-- **Stream Analytics**: Kafka Streams for real-time analytics
-- **Data Storage**: Multi-database operations and batch processing
-- **Data Analysis**: Aggregations, grouping, and reporting
-- **ETL Pipelines**: Complete Extract-Transform-Load workflows
-- **Data Quality**: Validation, cleansing, and anomaly detection
-- **Monitoring**: System health and performance monitoring
-- **Best Practices**: Error handling, logging, performance optimization
+- **Modern ETL Pipelines**: Java-based data ingestion with Kafka Streams
+- **Real-time ML Services**: Python fraud detection with MLflow integration
+- **Event-Driven Architecture**: Kafka as the central message backbone
+- **Feature Engineering**: Real-time feature stores with Redis and PostgreSQL
+- **ML Operations**: Complete MLOps pipeline with model registry and monitoring
+- **Comprehensive Monitoring**: Prometheus, Grafana, and custom metrics
+- **Container Orchestration**: Docker Compose with proper networking and dependencies
+- **Data Quality**: Validation, monitoring, and drift detection
+- **Production Patterns**: Health checks, error handling, and observability
 
-## 🏗️ Project Structure
+## 🏗️ Refactored Project Structure
 
 ```
-learning-data-engineering/
-├── src/main/java/com/dataengineering/
-│   ├── DataEngineeringApplication.java  # Main application entry point
-│   ├── config/
-│   │   ├── DatabaseConfig.java          # Database connection management
-│   │   └── KafkaConfig.java            # Kafka configuration
-│   ├── model/
-│   │   └── SalesRecord.java             # Core data model with validation
-│   ├── ingestion/
-│   │   ├── CsvDataIngestion.java        # CSV file processing
-│   │   └── JsonDataIngestion.java       # JSON file processing
-│   ├── processing/
-│   │   └── DataProcessor.java           # Data transformation & analysis
-│   ├── database/
-│   │   └── DatabaseOperations.java      # Database CRUD operations
-│   ├── kafka/
-│   │   ├── producer/SalesEventProducer.java  # Message publishing
-│   │   ├── consumer/SalesEventConsumer.java  # Message processing
-│   │   ├── streams/SalesStreamProcessor.java # Stream analytics
-│   │   ├── testing/                     # Comprehensive test suites
-│   │   └── monitoring/                  # Monitoring utilities
-│   └── service/
-│       └── KafkaIntegrationService.java # System orchestration
-├── src/main/resources/
-│   ├── logback.xml                      # Logging configuration
-│   └── kafka/kafka.properties           # Kafka properties
-├── init-scripts/                        # Database initialization SQL
-├── data/                                # Generated sample data files
-├── logs/                                # Application logs
-├── docker-compose.yml                   # Database containers
-├── docker-compose-kafka.yml             # Kafka ecosystem
-├── *.sh                                 # Utility scripts
-├── *.md                                 # Documentation files
-├── pom.xml                              # Maven dependencies
-└── README.md                            # This file
+learning_big_data/
+├── core/                          # Java ETL engine and streaming
+│   ├── etl-engine/               # Data ingestion and processing
+│   └── kafka-streams/            # Real-time stream processing
+├── ml-services/                  # Python ML platform
+│   └── fraud-detection/          # Complete fraud detection service
+├── infrastructure/               # Infrastructure as code
+│   └── monitoring/              # Unified monitoring stack
+├── shared/                       # Shared configurations and schemas
+│   ├── kafka/                   # Kafka topic and schema definitions
+│   └── schemas/                 # JSON schemas for data contracts
+├── deployment/                   # Docker orchestration
+│   └── docker-compose/          # Environment-specific compose files
+├── notebooks/                    # Jupyter notebooks for exploration
+├── data/                         # Data storage and processing
+├── init-scripts/                 # Database initialization
+└── [support files]              # Build configs, validation scripts
 ```
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- **Java 11 or higher** - The project uses modern Java features
-- **Maven 3.6+** - For dependency management and building
-- **Docker** - For running databases and Kafka
-- **IDE** (IntelliJ IDEA, Eclipse, or VS Code) - For code editing
+- **Java 11+** - For ETL engine and stream processing
+- **Python 3.9+** - For ML services
+- **Docker & Docker Compose** - For infrastructure
+- **Maven 3.6+** - For Java builds
+- **8GB+ RAM** - For running all services
 
-### Quick Start
-
-1. **Clone or download this project**
-   ```bash
-   cd learning_big_data
-   ```
-
-2. **Start the infrastructure**
-   ```bash
-   # Start databases
-   docker-compose up -d mysql postgres adminer
-   
-   # Start Kafka ecosystem
-   docker-compose -f docker-compose-kafka.yml up -d
-   
-   # Initialize databases
-   ./run-all-sql.sh
-   ```
-
-3. **Verify setup**
-   ```bash
-   # Test all connections
-   ./test-database-connections.sh
-   
-   # Validate architecture
-   ./validate-architecture.sh
-   ```
-
-4. **Run the application**
-   ```bash
-   mvn compile exec:java -Dexec.mainClass="com.dataengineering.DataEngineeringApplication"
-   ```
-
-## 🎮 Using the Application
-
-When you run the application, you'll see an interactive menu:
-
-```
-============================================================
-🎓 DATA ENGINEERING LEARNING APPLICATION
-============================================================
-1. 🏭 Run Complete ETL Pipeline
-2. 📥 Demonstrate Data Ingestion
-3. 🔄 Demonstrate Data Processing
-4. 🗄️ Demonstrate Database Operations
-5. 📊 Demonstrate Data Analysis
-6. 🔧 Test Database Connections
-7. 📝 Generate Sample Data
-8. 🚪 Exit
-============================================================
-```
-
-### Recommended Learning Path
-
-1. **Start with option 7** - Generate sample data to understand the data structure
-2. **Try option 2** - Learn about data ingestion from different sources
-3. **Explore option 3** - Understand data processing and transformations
-4. **Use option 4** - Learn database operations and persistence
-5. **Analyze with option 5** - Explore data analysis and reporting
-6. **Test option 6** - Verify database connectivity
-7. **Run option 1** - Execute the complete ETL pipeline
-
-### Real-time Streaming Components
-
-For Kafka streaming and real-time processing:
+### 1. Start the Complete Platform
 
 ```bash
-# Test Kafka producer-consumer
-mvn exec:java -Dexec.mainClass="com.dataengineering.kafka.testing.ProducerConsumerTestSuite"
+# Navigate to project directory
+cd learning_big_data
 
-# Try stream processing
-mvn exec:java -Dexec.mainClass="com.dataengineering.kafka.testing.StreamProcessorTestSuite"
+# Start infrastructure services (databases, Kafka, etc.)
+cd deployment/docker-compose
+docker-compose -f docker-compose.refactored.yml up -d
 
-# Interactive streaming demo
-mvn exec:java -Dexec.mainClass="com.dataengineering.kafka.testing.SimpleStreamDemo"
+# Start monitoring stack (optional but recommended)
+cd ../../infrastructure/monitoring
+docker-compose -f docker-compose.monitoring.yml up -d
+
+# Initialize databases
+cd ../../
+./run-all-sql.sh
 ```
 
-## 📚 Key Concepts Demonstrated
+### 2. Verify Platform Health
 
-### 1. Data Modeling (`SalesRecord.java`)
-- **Object-oriented data representation**
-- **Data validation and business rules**
-- **JSON serialization/deserialization**
-- **Proper equals/hashCode implementation**
+```bash
+# Check all services are running
+docker ps
 
-### 2. Data Ingestion (`CsvDataIngestion.java`, `JsonDataIngestion.java`)
-- **File parsing with error handling**
-- **Data format conversion**
-- **Batch processing patterns**
-- **Progress monitoring and logging**
+# Validate architecture
+./validate-architecture.sh
 
-### 3. Data Processing (`DataProcessor.java`)
-- **Stream API for data transformation**
-- **Filtering and aggregation operations**
-- **Grouping and statistical analysis**
-- **Anomaly detection algorithms**
-- **Data enrichment patterns**
-
-### 4. Database Operations (`DatabaseOperations.java`)
-- **JDBC connectivity and configuration**
-- **Batch insert operations for performance**
-- **Transaction management**
-- **Parameterized queries for security**
-- **Connection pooling concepts**
-
-### 5. Configuration Management (`DatabaseConfig.java`)
-- **Multi-database support (H2, MySQL, PostgreSQL)**
-- **Connection management and cleanup**
-- **Environment-specific configurations**
-
-## 🛠️ Technologies Used
-
-- **Java 11+** - Modern Java features and streams
-- **Maven** - Dependency management and build tool
-- **H2 Database** - In-memory database for learning
-- **MySQL/PostgreSQL** - Production database examples
-- **Jackson** - JSON processing
-- **Apache Commons CSV** - CSV file processing
-- **SLF4J + Logback** - Logging framework
-- **JUnit 5** - Testing framework
-
-## 📊 Sample Data
-
-The application generates realistic sales data with the following structure:
-
-```java
-{
-  "transaction_id": "TXN001",
-  "customer_id": "CUST001", 
-  "product_name": "Laptop Pro",
-  "product_category": "Electronics",
-  "quantity": 1,
-  "unit_price": 1299.99,
-  "total_amount": 1299.99,
-  "sale_date": "2023-10-01 10:30:00",
-  "store_location": "New York",
-  "sales_person": "John Smith"
-}
+# Test database connections
+./test-database-connections.sh
 ```
 
-## 🔧 Configuration
+### 3. Access the Platform
 
-### Database Configuration
+| Service | URL | Purpose |
+|---------|-----|---------|
+| **Fraud Detection API** | http://localhost:5001 | ML fraud detection service |
+| **MLflow UI** | http://localhost:5000 | ML experiment tracking |
+| **Kafka UI** | http://localhost:9090 | Kafka cluster management |
+| **Grafana Dashboards** | http://localhost:3000 | Monitoring and analytics |
+| **Prometheus Metrics** | http://localhost:9090 | Metrics collection |
 
-The application supports multiple databases:
+**Default Credentials:**
+- Grafana: `admin/admin123`
 
-- **H2** (default) - No setup required, runs in-memory
-- **MySQL** - Modify connection details in `DatabaseConfig.java`
-- **PostgreSQL** - Modify connection details in `DatabaseConfig.java`
+## 🎮 Using the Platform
 
-### Logging Configuration
+### Real-time Fraud Detection
 
-Logs are configured in `src/main/resources/logback.xml`:
-- Console output for immediate feedback
-- File logging with daily rotation
-- Configurable log levels
+```bash
+# Send a test transaction for fraud detection
+curl -X POST http://localhost:5001/api/v1/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "transaction_id": "test-123",
+    "customer_id": "customer-456",
+    "amount": 1500.00,
+    "timestamp": "2024-01-15T10:30:00Z",
+    "merchant_id": "merchant-789"
+  }'
+```
 
-## 🎯 Hands-On Exercises
+### Batch Processing
 
-### Exercise 1: Data Validation
-- Modify `SalesRecord.java` to add new validation rules
-- Add a field for "discount_percentage" with validation
-- Test with invalid data to see error handling
+```bash
+# Process multiple transactions
+curl -X POST http://localhost:5001/api/v1/predict/batch \
+  -H "Content-Type: application/json" \
+  -d '[
+    {"transaction_id": "txn-1", "customer_id": "cust-1", "amount": 100.00, "timestamp": "2024-01-15T10:30:00Z"},
+    {"transaction_id": "txn-2", "customer_id": "cust-2", "amount": 5000.00, "timestamp": "2024-01-15T10:31:00Z"}
+  ]'
+```
 
-### Exercise 2: Custom Data Processing
-- Add a new method in `DataProcessor.java` to find seasonal trends
-- Implement customer segmentation based on purchase behavior
-- Create a method to identify the best-selling day of the week
+### Health Monitoring
 
-### Exercise 3: Database Schema Enhancement
-- Add an index to the database table for better performance
-- Create a new table for customer information
-- Implement a join query to combine sales and customer data
+```bash
+# Check service health
+curl http://localhost:5001/health
 
-### Exercise 4: New Data Sources
-- Create a new ingestion class for XML files
-- Add support for reading from a REST API
-- Implement real-time data streaming simulation
+# Get metrics
+curl http://localhost:5001/metrics
 
-### Exercise 5: Advanced Analytics
-- Implement time-series analysis for sales trends
-- Add forecasting capabilities
-- Create data visualization export (CSV for external tools)
+# Check model information
+curl http://localhost:5001/api/v1/model
+```
 
-## 🐛 Troubleshooting
+## 📊 Architecture Components
 
-### Common Issues
+### Core ETL Layer (Java)
 
-1. **Java Version Error**
-   ```
-   Error: Java version not supported
-   Solution: Ensure Java 11+ is installed and set as JAVA_HOME
-   ```
+- **ETL Engine** (`core/etl-engine/`)
+  - Unified data ingestion (CSV, JSON, databases)
+  - Data validation and transformation
+  - Kafka streaming integration
+  - Batch processing with error handling
 
-2. **Maven Dependencies**
-   ```
-   Error: Could not resolve dependencies
-   Solution: Run 'mvn clean install' to download dependencies
-   ```
+- **Kafka Streams** (`core/kafka-streams/`)
+  - Real-time transaction processing
+  - Stream analytics and windowing
+  - High-value transaction detection
+  - Fraud preprocessing pipeline
 
-3. **Database Connection**
-   ```
-   Error: Could not connect to database
-   Solution: Use H2 (default) or verify MySQL/PostgreSQL setup
-   ```
+### ML Services Layer (Python)
 
-4. **Memory Issues**
-   ```
-   Error: OutOfMemoryError
-   Solution: Increase JVM heap size: -Xmx2g
-   ```
+- **Fraud Detection Service** (`ml-services/fraud-detection/`)
+  - Real-time fraud prediction API
+  - Feature engineering and feature store
+  - MLflow model registry integration
+  - Ensemble models (RandomForest + IsolationForest)
+  - Background Kafka processing
 
-## 📈 Performance Tips
+### Infrastructure Layer
 
-1. **Batch Processing**: Use batch operations for large datasets
-2. **Connection Pooling**: Implement connection pooling for production
-3. **Stream Processing**: Use Java Streams for efficient data processing
-4. **Indexing**: Add database indexes for frequently queried columns
-5. **Memory Management**: Process data in chunks for large files
+- **Monitoring Stack** (`infrastructure/monitoring/`)
+  - Prometheus metrics collection
+  - Grafana visualization dashboards
+  - AlertManager for notifications
+  - Custom exporters for ML metrics
+  - Log aggregation with Loki
 
-## 🚀 Next Steps
+- **Data Storage**
+  - PostgreSQL for data warehouse and feature store
+  - MySQL for transactional data
+  - Redis for real-time feature caching
+  - MLflow artifacts storage
 
-After mastering this project, consider exploring:
+### Event Backbone
 
-- **Apache Spark** for big data processing
-- **Apache Kafka** for real-time streaming
-- **Apache Airflow** for workflow orchestration
-- **Docker** for containerization
-- **Cloud platforms** (AWS, GCP, Azure) for scalable solutions
+- **Kafka Topics** (standardized naming)
+  - `transactions-raw-v1` - Raw transaction data
+  - `transactions-validated-v1` - Validated transactions
+  - `transactions-enriched-v1` - Feature-enriched data
+  - `fraud-predictions-v1` - ML predictions
+  - `fraud-alerts-v1` - High-risk alerts
+
+## 🔧 Development Workflow
+
+### Building and Testing
+
+```bash
+# Build Java components
+mvn clean compile
+
+# Run ETL engine
+mvn exec:java -Dexec.mainClass="com.dataengineering.etl.DataIngestionApplication"
+
+# Run Kafka streams processor
+mvn exec:java -Dexec.mainClass="com.dataengineering.streaming.TransactionStreamProcessor"
+```
+
+### Monitoring and Debugging
+
+```bash
+# View service logs
+docker-compose -f deployment/docker-compose/docker-compose.refactored.yml logs -f fraud-api
+
+# Monitor Kafka topics
+docker exec -it bigdata-kafka kafka-console-consumer --bootstrap-server localhost:9092 --topic fraud-predictions-v1
+
+# Check Prometheus targets
+curl http://localhost:9090/api/v1/targets
+```
+
+## 📈 Key Features Demonstrated
+
+### 1. **Event-Driven Architecture**
+- Kafka as central message bus
+- Event sourcing patterns
+- Loose coupling between services
+- Scalable message processing
+
+### 2. **Real-time ML Operations**
+- Online feature stores
+- Real-time model inference
+- Model performance monitoring
+- Drift detection and alerting
+
+### 3. **Data Quality & Validation**
+- Schema validation with JSON Schema
+- Data quality metrics
+- Anomaly detection
+- Error handling and dead letter queues
+
+### 4. **Observability**
+- Distributed tracing concepts
+- Custom business metrics
+- Performance monitoring
+- Health checks and alerting
+
+### 5. **Scalability Patterns**
+- Microservices architecture
+- Container orchestration
+- Independent service scaling
+- Load balancing strategies
+
+## 🛠️ Technology Stack
+
+### Core Technologies
+- **Java 11+** with Spring Boot - ETL engine and stream processing
+- **Python 3.9+** with Flask - ML services and APIs
+- **Apache Kafka** - Event streaming platform
+- **MLflow** - ML lifecycle management
+- **Redis** - Real-time feature caching
+- **PostgreSQL/MySQL** - Data storage
+
+### Monitoring & Operations
+- **Prometheus** - Metrics collection
+- **Grafana** - Visualization and dashboards
+- **Loki** - Log aggregation
+- **AlertManager** - Alert routing and notifications
+
+### Development & Deployment
+- **Docker & Docker Compose** - Containerization
+- **Maven** - Java build management
+- **pip** - Python dependency management
+
+## 🎯 Learning Path
+
+### Beginner (Getting Started)
+1. Start the platform with Docker Compose
+2. Explore the fraud detection API
+3. Send test transactions and observe results
+4. Check Grafana dashboards for metrics
+
+### Intermediate (Understanding Components)
+1. Examine the ETL engine source code
+2. Study the Kafka streams processing
+3. Explore the ML service implementation
+4. Understand the feature store design
+
+### Advanced (Customization & Extension)
+1. Add new ML models to the model registry
+2. Create custom Kafka streams processors
+3. Build additional monitoring dashboards
+4. Implement new fraud detection features
+
+## 📚 Additional Resources
+
+- **API Documentation**: Available at http://localhost:5001/docs (when running)
+- **Kafka Topics**: Monitor at http://localhost:9090 (Kafka UI)
+- **ML Experiments**: Track at http://localhost:5000 (MLflow)
+- **System Metrics**: View at http://localhost:3000 (Grafana)
 
 ## 🤝 Contributing
 
-Feel free to enhance this learning project:
+This is a learning project. Feel free to:
+- Experiment with the code
+- Add new features
+- Improve documentation
+- Share your learning experience
 
-1. Add new data sources (XML, Parquet, Avro)
-2. Implement additional processing algorithms
-3. Add more comprehensive testing
-4. Create performance benchmarks
-5. Add documentation and examples
+## 📄 License
 
-## 📝 License
-
-This is an educational project designed for learning purposes.
-
-## 🎓 Learning Resources
-
-- [Java Streams Documentation](https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html)
-- [JDBC Best Practices](https://docs.oracle.com/javase/tutorial/jdbc/)
-- [Maven Getting Started](https://maven.apache.org/guides/getting-started/)
-- [Data Engineering Fundamentals](https://www.oreilly.com/library/view/fundamentals-of-data/9781098108298/)
-
----
-
-**Happy Learning! 🎉**
-
-Start with the basics, experiment with the code, and gradually work your way up to more complex data engineering concepts. Remember, the best way to learn data engineering is by doing! 
+This project is for educational purposes. Use the patterns and practices in your own projects! 

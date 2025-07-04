@@ -1,0 +1,452 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dataengineering.com/schemas/transaction_schema.json",
+  "title": "Transaction Schema",
+  "description": "Standardized transaction schema for the data engineering platform",
+  "type": "object",
+  "version": "1.0.0",
+  "required": [
+    "transaction_id",
+    "customer_id",
+    "amount",
+    "timestamp"
+  ],
+  "properties": {
+    "transaction_id": {
+      "type": "string",
+      "description": "Unique identifier for the transaction",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "minLength": 5,
+      "maxLength": 50,
+      "examples": ["tx_123456", "TXN-2024-001", "transaction_abc123"]
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "Unique identifier for the customer",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "minLength": 3,
+      "maxLength": 50,
+      "examples": ["cust_123", "CUSTOMER-456", "user_abc123"]
+    },
+    "merchant_id": {
+      "type": "string",
+      "description": "Unique identifier for the merchant",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "minLength": 3,
+      "maxLength": 50,
+      "examples": ["merch_123", "MERCHANT-456", "store_abc123"]
+    },
+    "amount": {
+      "type": "number",
+      "description": "Transaction amount in the specified currency",
+      "minimum": 0.01,
+      "maximum": 1000000.00,
+      "multipleOf": 0.01,
+      "examples": [99.99, 1500.00, 25.50]
+    },
+    "currency": {
+      "type": "string",
+      "description": "ISO 4217 currency code",
+      "pattern": "^[A-Z]{3}$",
+      "default": "USD",
+      "examples": ["USD", "EUR", "GBP", "CAD"]
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "Transaction timestamp in ISO 8601 format",
+      "format": "date-time",
+      "examples": ["2024-01-15T10:30:00Z", "2024-01-15T10:30:00.123Z"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the transaction",
+      "minLength": 1,
+      "maxLength": 255,
+      "examples": ["Online purchase", "ATM withdrawal", "Coffee shop payment"]
+    },
+    "category": {
+      "type": "string",
+      "description": "Transaction category for classification",
+      "enum": [
+        "groceries",
+        "restaurants",
+        "gas_stations",
+        "retail",
+        "entertainment",
+        "healthcare",
+        "travel",
+        "utilities",
+        "financial_services",
+        "online_services",
+        "other"
+      ],
+      "examples": ["groceries", "restaurants", "retail"]
+    },
+    "location": {
+      "type": "object",
+      "description": "Transaction location information",
+      "properties": {
+        "country": {
+          "type": "string",
+          "description": "ISO 3166-1 alpha-2 country code",
+          "pattern": "^[A-Z]{2}$",
+          "examples": ["US", "CA", "UK", "DE"]
+        },
+        "state_province": {
+          "type": "string",
+          "description": "State or province code",
+          "minLength": 2,
+          "maxLength": 10,
+          "examples": ["CA", "NY", "ON", "BC"]
+        },
+        "city": {
+          "type": "string",
+          "description": "City name",
+          "minLength": 1,
+          "maxLength": 100,
+          "examples": ["San Francisco", "New York", "Toronto"]
+        },
+        "postal_code": {
+          "type": "string",
+          "description": "Postal or ZIP code",
+          "pattern": "^[A-Za-z0-9\\s-]+$",
+          "minLength": 3,
+          "maxLength": 20,
+          "examples": ["94102", "10001", "M5V 3A8"]
+        },
+        "coordinates": {
+          "type": "object",
+          "description": "GPS coordinates",
+          "properties": {
+            "latitude": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90,
+              "examples": [37.7749, 40.7128]
+            },
+            "longitude": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180,
+              "examples": [-122.4194, -74.0060]
+            }
+          },
+          "required": ["latitude", "longitude"]
+        }
+      }
+    },
+    "payment_method": {
+      "type": "object",
+      "description": "Payment method information",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["credit_card", "debit_card", "bank_transfer", "digital_wallet", "cash", "other"],
+          "examples": ["credit_card", "digital_wallet"]
+        },
+        "brand": {
+          "type": "string",
+          "description": "Payment brand (for cards)",
+          "enum": ["visa", "mastercard", "amex", "discover", "paypal", "apple_pay", "google_pay", "other"],
+          "examples": ["visa", "mastercard", "paypal"]
+        },
+        "last_four": {
+          "type": "string",
+          "description": "Last four digits of card (for cards)",
+          "pattern": "^[0-9]{4}$",
+          "examples": ["1234", "5678"]
+        }
+      },
+      "required": ["type"]
+    },
+    "channel": {
+      "type": "string",
+      "description": "Transaction channel",
+      "enum": ["online", "in_store", "mobile_app", "phone", "atm", "other"],
+      "examples": ["online", "in_store", "mobile_app"]
+    },
+    "device_info": {
+      "type": "object",
+      "description": "Device information for digital transactions",
+      "properties": {
+        "device_id": {
+          "type": "string",
+          "description": "Unique device identifier",
+          "examples": ["device_123", "iPhone_456"]
+        },
+        "ip_address": {
+          "type": "string",
+          "description": "IP address of the transaction",
+          "format": "ipv4",
+          "examples": ["192.168.1.1", "10.0.0.1"]
+        },
+        "user_agent": {
+          "type": "string",
+          "description": "Browser user agent string",
+          "examples": ["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"]
+        },
+        "session_id": {
+          "type": "string",
+          "description": "Session identifier",
+          "examples": ["sess_123456", "session_abc"]
+        }
+      }
+    },
+    "risk_indicators": {
+      "type": "object",
+      "description": "Risk assessment indicators",
+      "properties": {
+        "velocity_check": {
+          "type": "object",
+          "description": "Transaction velocity indicators",
+          "properties": {
+            "transactions_last_hour": {
+              "type": "integer",
+              "minimum": 0,
+              "examples": [1, 5, 10]
+            },
+            "amount_last_hour": {
+              "type": "number",
+              "minimum": 0,
+              "examples": [100.00, 500.00]
+            },
+            "transactions_last_day": {
+              "type": "integer",
+              "minimum": 0,
+              "examples": [5, 20, 50]
+            },
+            "amount_last_day": {
+              "type": "number",
+              "minimum": 0,
+              "examples": [1000.00, 5000.00]
+            }
+          }
+        },
+        "geolocation_risk": {
+          "type": "object",
+          "description": "Geographic risk indicators",
+          "properties": {
+            "is_foreign_country": {
+              "type": "boolean",
+              "examples": [true, false]
+            },
+            "distance_from_home": {
+              "type": "number",
+              "description": "Distance from customer's home location in kilometers",
+              "minimum": 0,
+              "examples": [0, 50, 1000]
+            },
+            "travel_velocity": {
+              "type": "number",
+              "description": "Required travel speed to reach location (km/h)",
+              "minimum": 0,
+              "examples": [0, 60, 500]
+            }
+          }
+        },
+        "behavioral_risk": {
+          "type": "object",
+          "description": "Behavioral risk indicators",
+          "properties": {
+            "unusual_time": {
+              "type": "boolean",
+              "description": "Transaction at unusual time for customer",
+              "examples": [true, false]
+            },
+            "unusual_amount": {
+              "type": "boolean",
+              "description": "Unusual transaction amount for customer",
+              "examples": [true, false]
+            },
+            "unusual_merchant": {
+              "type": "boolean",
+              "description": "First time transaction with this merchant",
+              "examples": [true, false]
+            }
+          }
+        }
+      }
+    },
+    "fraud_labels": {
+      "type": "object",
+      "description": "Fraud detection labels and scores (for training data)",
+      "properties": {
+        "is_fraud": {
+          "type": "boolean",
+          "description": "True if transaction is confirmed fraud",
+          "examples": [true, false]
+        },
+        "fraud_type": {
+          "type": "string",
+          "description": "Type of fraud if confirmed",
+          "enum": ["card_not_present", "stolen_card", "account_takeover", "synthetic_identity", "other"],
+          "examples": ["card_not_present", "stolen_card"]
+        },
+        "confirmed_by": {
+          "type": "string",
+          "description": "How fraud was confirmed",
+          "enum": ["customer_report", "manual_review", "chargeback", "investigation"],
+          "examples": ["customer_report", "manual_review"]
+        },
+        "confirmation_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When fraud was confirmed",
+          "examples": ["2024-01-16T14:30:00Z"]
+        }
+      }
+    },
+    "processing_metadata": {
+      "type": "object",
+      "description": "Metadata added during processing",
+      "properties": {
+        "ingestion_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When transaction was ingested into the system",
+          "examples": ["2024-01-15T10:30:05Z"]
+        },
+        "source_system": {
+          "type": "string",
+          "description": "Source system that provided the transaction",
+          "examples": ["payment_processor", "mobile_app", "web_portal"]
+        },
+        "data_version": {
+          "type": "string",
+          "description": "Version of the data format",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "examples": ["1.0.0", "1.2.3"]
+        },
+        "enrichment_flags": {
+          "type": "array",
+          "description": "Flags indicating what enrichments have been applied",
+          "items": {
+            "type": "string",
+            "enum": [
+              "geolocation_enriched",
+              "velocity_calculated",
+              "risk_scored",
+              "fraud_predicted",
+              "customer_profiled",
+              "merchant_profiled"
+            ]
+          },
+          "examples": [["geolocation_enriched", "risk_scored"]]
+        },
+        "quality_score": {
+          "type": "number",
+          "description": "Data quality score (0-1)",
+          "minimum": 0,
+          "maximum": 1,
+          "examples": [0.95, 0.87, 1.0]
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "transaction_id": "tx_20240115_123456",
+      "customer_id": "cust_789",
+      "merchant_id": "merch_coffee_shop_001",
+      "amount": 4.95,
+      "currency": "USD",
+      "timestamp": "2024-01-15T08:30:00Z",
+      "description": "Coffee and pastry",
+      "category": "restaurants",
+      "location": {
+        "country": "US",
+        "state_province": "CA",
+        "city": "San Francisco",
+        "postal_code": "94102",
+        "coordinates": {
+          "latitude": 37.7749,
+          "longitude": -122.4194
+        }
+      },
+      "payment_method": {
+        "type": "credit_card",
+        "brand": "visa",
+        "last_four": "1234"
+      },
+      "channel": "in_store",
+      "risk_indicators": {
+        "velocity_check": {
+          "transactions_last_hour": 1,
+          "amount_last_hour": 4.95,
+          "transactions_last_day": 3,
+          "amount_last_day": 25.50
+        },
+        "geolocation_risk": {
+          "is_foreign_country": false,
+          "distance_from_home": 2.5,
+          "travel_velocity": 0
+        },
+        "behavioral_risk": {
+          "unusual_time": false,
+          "unusual_amount": false,
+          "unusual_merchant": false
+        }
+      },
+      "processing_metadata": {
+        "ingestion_timestamp": "2024-01-15T08:30:05Z",
+        "source_system": "payment_processor",
+        "data_version": "1.0.0",
+        "enrichment_flags": ["geolocation_enriched", "velocity_calculated"],
+        "quality_score": 0.95
+      }
+    },
+    {
+      "transaction_id": "tx_20240115_789012",
+      "customer_id": "cust_456",
+      "merchant_id": "merch_online_retail_002",
+      "amount": 299.99,
+      "currency": "USD",
+      "timestamp": "2024-01-15T14:45:00Z",
+      "description": "Electronics purchase",
+      "category": "retail",
+      "location": {
+        "country": "US",
+        "state_province": "NY",
+        "city": "New York",
+        "postal_code": "10001"
+      },
+      "payment_method": {
+        "type": "digital_wallet",
+        "brand": "paypal"
+      },
+      "channel": "online",
+      "device_info": {
+        "device_id": "device_laptop_001",
+        "ip_address": "192.168.1.100",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "session_id": "sess_abc123def"
+      },
+      "risk_indicators": {
+        "velocity_check": {
+          "transactions_last_hour": 1,
+          "amount_last_hour": 299.99,
+          "transactions_last_day": 1,
+          "amount_last_day": 299.99
+        },
+        "geolocation_risk": {
+          "is_foreign_country": false,
+          "distance_from_home": 0,
+          "travel_velocity": 0
+        },
+        "behavioral_risk": {
+          "unusual_time": false,
+          "unusual_amount": true,
+          "unusual_merchant": true
+        }
+      },
+      "processing_metadata": {
+        "ingestion_timestamp": "2024-01-15T14:45:03Z",
+        "source_system": "web_portal",
+        "data_version": "1.0.0",
+        "enrichment_flags": ["geolocation_enriched", "velocity_calculated", "risk_scored"],
+        "quality_score": 0.92
+      }
+    }
+  ]
+} 

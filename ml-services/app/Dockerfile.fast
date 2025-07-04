@@ -1,0 +1,60 @@
+# Fast Dockerfile using pre-built ML image
+FROM jupyter/scipy-notebook:latest
+
+LABEL maintainer="Big Data Learning Platform"
+LABEL description="ML Services Platform - Fast Build"
+LABEL version="2.0.0"
+
+# Switch to root to install system packages
+USER root
+
+# Install additional system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy and install only essential additional packages
+COPY ../../requirements-fast.txt /app/requirements.txt
+
+# Install only additional packages not in base image
+RUN pip install --no-cache-dir \
+    flask==2.3.2 \
+    flask-cors==4.0.0 \
+    mlflow==2.5.0 \
+    psycopg2-binary==2.9.7 \
+    sqlalchemy==2.0.19 \
+    redis==4.6.0 \
+    prometheus-client==0.17.1 \
+    psutil==5.9.5 \
+    pydantic==2.1.1
+
+# Copy application code
+COPY app/ /app/
+
+# Create necessary directories
+RUN mkdir -p /app/data /app/models /app/logs
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV FLASK_APP=main.py
+ENV FLASK_ENV=production
+ENV PYTHONUNBUFFERED=1
+
+# Create non-root user for security
+RUN adduser --disabled-password --gecos '' appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+
+# Expose ports
+EXPOSE 5000 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
+
+# Default command
+CMD ["python", "main.py"] 

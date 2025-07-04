@@ -1,0 +1,199 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'bigdata-learning'
+    environment: 'development'
+
+rule_files:
+  - "rules/*.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+
+  # System metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  # Container metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  # Java ETL Application metrics
+  - job_name: 'etl-engine'
+    static_configs:
+      - targets: ['etl-engine:8080']
+    scrape_interval: 10s
+    metrics_path: /actuator/prometheus
+    scrape_timeout: 5s
+
+  # Kafka Streams metrics
+  - job_name: 'kafka-streams'
+    static_configs:
+      - targets: ['kafka-streams:8081']
+    scrape_interval: 10s
+    metrics_path: /actuator/prometheus
+
+  # Kafka cluster metrics
+  - job_name: 'kafka-exporter'
+    static_configs:
+      - targets: ['kafka-exporter:9308']
+    scrape_interval: 30s
+
+  # Kafka JMX metrics
+  - job_name: 'kafka-jmx'
+    static_configs:
+      - targets: ['kafka:9999']
+    scrape_interval: 30s
+
+  # Fraud Detection API metrics
+  - job_name: 'fraud-detection-api'
+    static_configs:
+      - targets: ['fraud-api:8000']
+    scrape_interval: 5s
+    metrics_path: /metrics
+    scrape_timeout: 3s
+
+  # MLflow metrics
+  - job_name: 'mlflow-exporter'
+    static_configs:
+      - targets: ['mlflow-exporter:9401']
+    scrape_interval: 30s
+
+  # Custom fraud detection metrics
+  - job_name: 'fraud-exporter'
+    static_configs:
+      - targets: ['fraud-exporter:9402']
+    scrape_interval: 15s
+
+  # Redis metrics (Feature Store)
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+
+  # PostgreSQL metrics
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+
+  # MySQL metrics (if using MySQL)
+  - job_name: 'mysql-exporter'
+    static_configs:
+      - targets: ['mysql-exporter:9104']
+    scrape_interval: 30s
+
+  # Blackbox exporter for endpoint monitoring
+  - job_name: 'blackbox-http'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - http://fraud-api:5001/health
+        - http://etl-engine:8080/actuator/health
+        - http://mlflow:5000/health
+        - http://grafana:3000/api/health
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # Blackbox exporter for TCP monitoring
+  - job_name: 'blackbox-tcp'
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    static_configs:
+      - targets:
+        - kafka:9092
+        - redis:6379
+        - postgres:5432
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # Feature Store health monitoring
+  - job_name: 'feature-store-health'
+    static_configs:
+      - targets: ['fraud-api:5001']
+    scrape_interval: 15s
+    metrics_path: /features/health
+    
+  # Model Registry health monitoring
+  - job_name: 'model-registry-health'
+    static_configs:
+      - targets: ['fraud-api:5001']
+    scrape_interval: 30s
+    metrics_path: /model/health
+
+  # Data Quality monitoring
+  - job_name: 'data-quality-monitor'
+    static_configs:
+      - targets: ['data-quality-monitor:9403']
+    scrape_interval: 60s
+
+  # Alert Manager
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
+    scrape_interval: 30s
+
+  # Grafana metrics
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Custom business metrics
+  - job_name: 'business-metrics'
+    static_configs:
+      - targets: ['fraud-api:5001']
+    scrape_interval: 30s
+    metrics_path: /analytics/metrics
+    honor_labels: true
+
+  # Stream processing lag monitoring
+  - job_name: 'kafka-lag-exporter'
+    static_configs:
+      - targets: ['kafka-lag-exporter:9999']
+    scrape_interval: 15s
+    
+  # JVM metrics for Java applications
+  - job_name: 'jvm-metrics'
+    static_configs:
+      - targets: 
+        - 'etl-engine:8080'
+        - 'kafka-streams:8081'
+    scrape_interval: 30s
+    metrics_path: /actuator/prometheus
+    params:
+      match[]: 
+        - 'jvm_*'
+        - 'process_*'
+        - 'system_*' 
